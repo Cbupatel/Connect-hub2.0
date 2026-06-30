@@ -85,6 +85,7 @@ export default function App() {
 
   // Real-time synchronization for Coaches
   useEffect(() => {
+    if (!currentUser) return;
     const unsub = onSnapshot(collection(db, 'coaches'), (snapshot) => {
       const coachesList: Coach[] = [];
       snapshot.forEach((docSnap) => {
@@ -107,10 +108,11 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, 'coaches');
     });
     return () => unsub();
-  }, []);
+  }, [currentUser]);
 
   // Real-time synchronization for Players
   useEffect(() => {
+    if (!currentUser) return;
     const unsub = onSnapshot(collection(db, 'players'), (snapshot) => {
       const playersList: Player[] = [];
       snapshot.forEach((docSnap) => {
@@ -133,7 +135,7 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, 'players');
     });
     return () => unsub();
-  }, []);
+  }, [currentUser]);
 
   // ModalsState
   const [activeCoach, setActiveCoach] = useState<Coach | null>(null);
