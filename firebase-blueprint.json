@@ -1,0 +1,316 @@
+{
+  "entities": {
+    "Coach": {
+      "title": "Coach",
+      "description": "Vetted football coaching and scouting professionals in the network",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the coach"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the coach"
+        },
+        "specialty": {
+          "type": "string",
+          "enum": [
+            "Elite Scout",
+            "Goalkeeping",
+            "Strength & Cond.",
+            "Tactical Expert"
+          ],
+          "description": "Coaching domain expertise"
+        },
+        "rating": {
+          "type": "number",
+          "description": "Verified rating out of 5.0"
+        },
+        "ratingCount": {
+          "type": "number",
+          "description": "Total number of player/scout ratings received"
+        },
+        "bio": {
+          "type": "string",
+          "description": "Professional background, training methodology and values"
+        },
+        "experience": {
+          "type": "string",
+          "description": "Details of career experience duration"
+        },
+        "growthRate": {
+          "type": "number",
+          "description": "Performance metric growth stat (0 to 100)"
+        },
+        "growthLabel": {
+          "type": "string",
+          "description": "Label of the key growth area"
+        },
+        "avatar": {
+          "type": "string",
+          "description": "URL to the profile picture"
+        },
+        "location": {
+          "type": "string",
+          "description": "District or academy base location in India"
+        },
+        "license": {
+          "type": "string",
+          "description": "Recognized coaching credentials (AIFF, AFC, FIFA)"
+        },
+        "fees": {
+          "type": "string",
+          "description": "Standard training rates per month"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp indicating registration"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "specialty",
+        "rating",
+        "ratingCount",
+        "bio",
+        "experience",
+        "avatar",
+        "location",
+        "license",
+        "fees"
+      ]
+    },
+    "Player": {
+      "title": "Player",
+      "description": "Grassroots football players listing their metrics and achievements",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the player"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the player"
+        },
+        "position": {
+          "type": "string",
+          "enum": [
+            "ST",
+            "CM",
+            "CB",
+            "GK",
+            "LW",
+            "RW"
+          ],
+          "description": "Primary football position key"
+        },
+        "age": {
+          "type": "number",
+          "description": "Age of the youth athlete"
+        },
+        "location": {
+          "type": "string",
+          "description": "Hometown base in India"
+        },
+        "avatar": {
+          "type": "string",
+          "description": "URL to the player picture"
+        },
+        "bio": {
+          "type": "string",
+          "description": "Athletic aspiration, football journey, and background"
+        },
+        "stats": {
+          "type": "object",
+          "description": "Calculated performance metrics representing player attributes on a 0-100 scale"
+        },
+        "achievements": {
+          "type": "array",
+          "description": "Historic list of accolades, team titles, or state leagues won"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp indicating registration"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "position",
+        "age",
+        "location",
+        "avatar",
+        "bio",
+        "stats",
+        "achievements"
+      ]
+    },
+    "ConnectRequest": {
+      "title": "ConnectRequest",
+      "description": "Connection offers, booking info, or scout proposals scheduled between players, scouts, and coaches",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique request document sequence"
+        },
+        "senderName": {
+          "type": "string",
+          "description": "Name of the booking entity or scouting agency"
+        },
+        "senderEmail": {
+          "type": "string",
+          "description": "Contact email of the sender"
+        },
+        "message": {
+          "type": "string",
+          "description": "Session focus points, trial information, or direct proposals"
+        },
+        "targetRole": {
+          "type": "string",
+          "enum": ["coach", "player"],
+          "description": "Role of the recipient profile"
+        },
+        "targetId": {
+          "type": "string",
+          "description": "Target profile identification key"
+        },
+        "targetName": {
+          "type": "string",
+          "description": "Target profile full name cached for visibility"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Authentication ID of the sender for authorization checks"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp indicating proposal submission"
+        }
+      },
+      "required": [
+        "id",
+        "senderName",
+        "senderEmail",
+        "message",
+        "targetRole",
+        "targetId",
+        "targetName"
+      ]
+    },
+    "User": {
+      "title": "User",
+      "description": "Authenticated user profiles registered in ConnectHub",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The unique Firebase Authentication UID"
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the user"
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user"
+        },
+        "photoFileName": {
+          "type": "string",
+          "description": "The file name, path, or URL of the user avatar"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp indicating registration"
+        }
+      },
+      "required": [
+        "name",
+        "email"
+      ]
+    },
+    "ConnectionRequest": {
+      "title": "ConnectionRequest",
+      "description": "Connection requests saved from the coach connection form",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique key of the connection request"
+        },
+        "requesterName": {
+          "type": "string",
+          "description": "Name of the athlete or person submitting the request"
+        },
+        "requesterEmail": {
+          "type": "string",
+          "description": "Email address of the requester"
+        },
+        "coachId": {
+          "type": "string",
+          "description": "ID of the target coach"
+        },
+        "coachName": {
+          "type": "string",
+          "description": "Name of the target coach"
+        },
+        "message": {
+          "type": "string",
+          "description": "Message or trial focus details"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the request was dispatched"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "accepted", "declined"],
+          "description": "Status of the connection request"
+        },
+        "requesterId": {
+          "type": "string",
+          "description": "UID of the logged in user"
+        }
+      },
+      "required": [
+        "id",
+        "requesterName",
+        "requesterEmail",
+        "coachId",
+        "coachName",
+        "message",
+        "status"
+      ]
+    }
+  },
+  "firestore": {
+    "coaches": {
+      "schema": "Coach",
+      "description": "Registry of vetted elite football coaches in the local ecosystems"
+    },
+    "players": {
+      "schema": "Player",
+      "description": "Active grassroots pipeline players and high school talents"
+    },
+    "connectRequests": {
+      "schema": "ConnectRequest",
+      "description": "Scouting intents, session bookings, and direct trial requests dispatched through the application"
+    },
+    "connectionRequests": {
+      "schema": "ConnectionRequest",
+      "description": "Strict coach connection requests matching user specification"
+    },
+    "users": {
+      "schema": "User",
+      "description": "Registered and authenticated user profiles"
+    }
+  }
+}

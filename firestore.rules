@@ -1,0 +1,175 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all to prevent unmapped access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // ----------------- Primitives & Helper Functions -----------------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // ----------------- Entity Validation Blueprints -----------------
+    
+    // Validate Coach registration/updates
+    function isValidCoach(coach) {
+      return coach.keys().hasAll(['id', 'name', 'specialty', 'rating', 'ratingCount', 'bio', 'experience', 'avatar', 'location', 'license', 'fees'])
+        && coach.keys().size() <= 13
+        && coach.id is string && coach.id.size() <= 128
+        && coach.name is string && coach.name.size() <= 100
+        && coach.specialty is string && (
+             coach.specialty == 'Elite Scout' 
+             || coach.specialty == 'Goalkeeping' 
+             || coach.specialty == 'Strength & Cond.' 
+             || coach.specialty == 'Tactical Expert'
+           )
+        && coach.rating is number
+        && coach.ratingCount is number
+        && coach.bio is string && coach.bio.size() <= 1000
+        && coach.experience is string && coach.experience.size() <= 50
+        && coach.avatar is string && coach.avatar.size() <= 500
+        && coach.location is string && coach.location.size() <= 100
+        && coach.license is string && coach.license.size() <= 150
+        && coach.fees is string && coach.fees.size() <= 50;
+    }
+
+    // Validate Grassroots Player registration/updates
+    function isValidPlayer(player) {
+      return player.keys().hasAll(['id', 'name', 'position', 'age', 'location', 'avatar', 'bio', 'stats', 'achievements'])
+        && player.keys().size() <= 10
+        && player.id is string && player.id.size() <= 128
+        && player.name is string && player.name.size() <= 100
+        && player.position is string && (
+             player.position == 'ST' 
+             || player.position == 'CM' 
+             || player.position == 'CB' 
+             || player.position == 'GK' 
+             || player.position == 'LW' 
+             || player.position == 'RW'
+           )
+        && player.age is number && player.age >= 5 && player.age <= 100
+        && player.location is string && player.location.size() <= 100
+        && player.avatar is string && player.avatar.size() <= 500
+        && player.bio is string && player.bio.size() <= 1000
+        && player.stats is map
+        && player.stats.pace is number && player.stats.pace >= 0 && player.stats.pace <= 100
+        && player.stats.dribbling is number && player.stats.dribbling >= 0 && player.stats.dribbling <= 100
+        && player.stats.passing is number && player.stats.passing >= 0 && player.stats.passing <= 100
+        && player.stats.physicality is number && player.stats.physicality >= 0 && player.stats.physicality <= 100
+        && player.stats.tacticalIq is number && player.stats.tacticalIq >= 0 && player.stats.tacticalIq <= 100
+        && player.achievements is list && player.achievements.size() <= 15;
+    }
+
+    // Validate a ConnectRequest document
+    function isValidConnectRequest(req) {
+      return req.keys().hasAll(['id', 'senderName', 'senderEmail', 'message', 'targetRole', 'targetId', 'targetName'])
+        && req.keys().size() <= 9
+        && req.id is string && req.id.size() <= 128
+        && req.senderName is string && req.senderName.size() <= 100
+        && req.senderEmail is string && req.senderEmail.size() <= 150
+        && req.message is string && req.message.size() <= 2000
+        && req.targetRole is string && (req.targetRole == 'coach' || req.targetRole == 'player')
+        && req.targetId is string && req.targetId.size() <= 128
+        && req.targetName is string && req.targetName.size() <= 100;
+    }
+
+    // Validate a ConnectionRequest document (Coach Connection Form specification)
+    function isValidConnectionRequest(req) {
+      return req.keys().hasAll(['id', 'requesterName', 'requesterEmail', 'coachId', 'coachName', 'message', 'status', 'timestamp'])
+        && req.keys().size() <= 10
+        && req.id is string && req.id.size() <= 128
+        && req.requesterName is string && req.requesterName.size() <= 100
+        && req.requesterEmail is string && req.requesterEmail.size() <= 150
+        && req.coachId is string && req.coachId.size() <= 128
+        && req.coachName is string && req.coachName.size() <= 100
+        && req.message is string && req.message.size() <= 2000
+        && req.status is string && (req.status == 'pending' || req.status == 'accepted' || req.status == 'declined')
+        && req.timestamp == request.time
+        && (!('requesterId' in req) || (req.requesterId is string && req.requesterId == request.auth.uid));
+    }
+
+    // Validate global User profile schema
+    function isValidUser(user) {
+      return user.keys().hasAll(['id', 'name', 'email', 'photoFileName'])
+        && user.keys().size() <= 6
+        && user.id is string && user.id.size() <= 128
+        && user.name is string && user.name.size() <= 150
+        && user.email is string && user.email.size() <= 200
+        && user.photoFileName is string && user.photoFileName.size() <= 1200;
+    }
+
+    // ----------------- Collection Paths Matches -----------------
+
+    // 1. Coaches Collection
+    match /coaches/{coachId} {
+      allow get, list: if true; // Public catalogs require global readability
+      allow create: if isSignedIn() && isValidId(coachId) && isValidCoach(incoming());
+      allow update: if isSignedIn() && isValidId(coachId) && isValidCoach(incoming()) && (
+        incoming().id == existing().id // Prevent spoofing the document ID field
+      );
+      allow delete: if false; // Prevent client deleting directories
+    }
+
+    // 2. Players Collection
+    match /players/{playerId} {
+      allow get, list: if true; // Anyone can view listed player profiles
+      allow create: if isSignedIn() && isValidId(playerId) && isValidPlayer(incoming());
+      allow update: if isSignedIn() && isValidId(playerId) && isValidPlayer(incoming()) && (
+        incoming().id == existing().id
+      );
+      allow delete: if false; // Safety lock of player profiles from delete calls
+    }
+
+    // 3. Connect Requests Collection
+    match /connectRequests/{requestId} {
+      allow list, get: if isSignedIn(); // Authenticated users can fetch their requests
+      allow create: if isSignedIn() && isValidId(requestId) && isValidConnectRequest(incoming());
+      allow update, delete: if false; // Relational submissions are read-only once written
+    }
+
+    // 3b. Strictly Vetted Connection Requests (Coach Connections specifications)
+    match /connectionRequests/{requestId} {
+      allow list, get: if isSignedIn() && (
+        resource.data.requesterEmail == request.auth.token.email ||
+        resource.data.requesterId == request.auth.uid
+      );
+      allow create: if isSignedIn() && isValidId(requestId) && isValidConnectionRequest(incoming());
+      allow update, delete: if false;
+    }
+
+    // 3c. Mail collection database entries for Firebase Email Extension
+    match /mail/{mailId} {
+      allow create: if isSignedIn();
+      allow read, update, delete: if false;
+    }
+
+    // 4. Users Collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming());
+      allow update: if isSignedIn() && request.auth.uid == userId && isValidUser(incoming()) && (
+        incoming().id == existing().id
+      );
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+  }
+}
